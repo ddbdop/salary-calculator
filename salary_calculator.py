@@ -84,7 +84,6 @@ with col2:
         reset_app()
         st.rerun()
 
-# --- FILE UPLOAD LOGIC ---
 if os.path.exists("pay_matrix.csv"):
     levels, matrix_dict = load_pay_matrix("pay_matrix.csv")
 else:
@@ -137,21 +136,17 @@ with st.sidebar:
     st.header("5. Future Pay Commissions")
     da_scenario = st.selectbox("Future DA Trajectory", ["Conservative (4%)", "Balanced (5%)", "Optimistic (6%)"], index=1, key='da_scen')
     
+    st.subheader("8th CPC")
     cpc_8_fitment = st.number_input("8th CPC Fitment Factor", value=2.57, step=0.01, key='cpc8_fit')
     cpc_8_impl_choice = st.selectbox("8th CPC Tentative Implementation Date", ["Jan 2026", "Jan 2027", "Jul 2027", "Jan 2028", "Jul 2028", "Jan 2029"], index=3, key='cpc8_impl')
-    
-    cpc_9_fitment = st.number_input("9th CPC Fitment Factor", value=2.57, step=0.01, key='cpc9_fit')
-    cpc_9_impl_choice = st.selectbox("9th CPC Tentative Implementation Date", ["Jan 2036", "Jan 2037", "Jan 2038"], index=1, key='cpc9_impl')
-    
-    cpc_10_fitment = st.number_input("10th CPC Fitment Factor", value=2.57, step=0.01, key='cpc10_fit')
-    cpc_10_impl_choice = st.selectbox("10th CPC Tentative Implementation Date", ["Jan 2046", "Jan 2047", "Jan 2048"], index=0, key='cpc10_impl')
-
     impl_map = {"Jan 2026": datetime.date(2026, 1, 1), "Jan 2027": datetime.date(2027, 1, 1), "Jul 2027": datetime.date(2027, 7, 1),
-                "Jan 2028": datetime.date(2028, 1, 1), "Jul 2028": datetime.date(2028, 7, 1), "Jan 2029": datetime.date(2029, 1, 1),
-                "Jan 2036": datetime.date(2036, 1, 1), "Jan 2037": datetime.date(2037, 1, 1), "Jan 2038": datetime.date(2038, 1, 1),
-                "Jan 2046": datetime.date(2046, 1, 1), "Jan 2047": datetime.date(2047, 1, 1), "Jan 2048": datetime.date(2048, 1, 1)}
+                "Jan 2028": datetime.date(2028, 1, 1), "Jul 2028": datetime.date(2028, 7, 1), "Jan 2029": datetime.date(2029, 1, 1)}
+    
+    st.subheader("9th & 10th CPC")
+    cpc_9_fitment = st.number_input("9th CPC Fitment Factor (Jan 2036)", value=2.57, step=0.01, key='cpc9_fit')
+    cpc_10_fitment = st.number_input("10th CPC Fitment Factor (Jan 2046)", value=2.57, step=0.01, key='cpc10_fit')
 
-    st.header("6. Mandatory Deductions & Net Pay")
+    st.header("6. Mandatory Deductions")
     cghs_ded = st.number_input("CGHS Deduction (₹)", value=650, step=50, key='cghs')
     cgegis_ded = st.number_input("CGEGIS Deduction (₹)", value=60, step=10, key='cgegis')
     if scheme == "OPS":
@@ -185,11 +180,7 @@ def simulate():
     active_fitment = 1.0
 
     while curr_date <= ret_date:
-        # Check Arrears Period
-        is_8_arrear = (curr_date >= datetime.date(2026, 1, 1) and curr_date < impl_map[cpc_8_impl_choice])
-        is_9_arrear = (curr_date >= datetime.date(2036, 1, 1) and curr_date < impl_map[cpc_9_impl_choice])
-        is_10_arrear = (curr_date >= datetime.date(2046, 1, 1) and curr_date < impl_map[cpc_10_impl_choice])
-        is_arrear_period = is_8_arrear or is_9_arrear or is_10_arrear
+        is_arrear_period = (curr_date >= datetime.date(2026, 1, 1) and curr_date < impl_map[cpc_8_impl_choice])
 
         # 1. MACP Processing
         macp_hits = [m for m in macp_list if m["date"].year == curr_date.year and m["date"].month == curr_date.month]
@@ -230,7 +221,8 @@ def simulate():
                 else:
                     notional_basic = round((notional_basic * 1.03)/100)*100
 
-        # 3. CPC Due Triggers (Sets up Notional Arrears Track)
+        # 3. CPC Due Triggers
+        # 8th CPC
         if curr_date == datetime.date(2026, 1, 1):
             if impl_map[cpc_8_impl_choice] == curr_date:
                 c_basic, c_da, active_fitment = round((c_basic * cpc_8_fitment)/100)*100, 0, cpc_8_fitment
@@ -238,27 +230,15 @@ def simulate():
                 notional_basic, notional_level, notional_da = round((c_basic * cpc_8_fitment)/100)*100, c_level, 0
                 notional_tpta_base = round((base_tpta_7cpc * cpc_8_fitment)/100)*100
         
-        elif curr_date == datetime.date(2036, 1, 1):
-            if impl_map[cpc_9_impl_choice] == curr_date:
-                c_basic, c_da, active_fitment = round((c_basic * cpc_9_fitment)/100)*100, 0, cpc_8_fitment * cpc_9_fitment
-            else:
-                notional_basic, notional_level, notional_da = round((c_basic * cpc_9_fitment)/100)*100, c_level, 0
-                notional_tpta_base = round(((base_tpta_7cpc * active_fitment) * cpc_9_fitment)/100)*100
+        # 9th & 10th CPCs (Instant Implementation)
+        if curr_date == datetime.date(2036, 1, 1):
+            c_basic, c_da, active_fitment = round((c_basic * cpc_9_fitment)/100)*100, 0, active_fitment * cpc_9_fitment
+        if curr_date == datetime.date(2046, 1, 1):
+            c_basic, c_da, active_fitment = round((c_basic * cpc_10_fitment)/100)*100, 0, active_fitment * cpc_10_fitment
 
-        elif curr_date == datetime.date(2046, 1, 1):
-            if impl_map[cpc_10_impl_choice] == curr_date:
-                c_basic, c_da, active_fitment = round((c_basic * cpc_10_fitment)/100)*100, 0, cpc_8_fitment * cpc_9_fitment * cpc_10_fitment
-            else:
-                notional_basic, notional_level, notional_da = round((c_basic * cpc_10_fitment)/100)*100, c_level, 0
-                notional_tpta_base = round(((base_tpta_7cpc * active_fitment) * cpc_10_fitment)/100)*100
-
-        # 4. CPC Actual Implementation Catch-Up
+        # 4. 8th CPC Actual Implementation Catch-Up
         if curr_date == impl_map[cpc_8_impl_choice] and curr_date > datetime.date(2026, 1, 1):
             c_basic, c_level, c_da, pending_dni, active_fitment = notional_basic, notional_level, notional_da, notional_pending_dni, cpc_8_fitment
-        elif curr_date == impl_map[cpc_9_impl_choice] and curr_date > datetime.date(2036, 1, 1):
-            c_basic, c_level, c_da, pending_dni, active_fitment = notional_basic, notional_level, notional_da, notional_pending_dni, cpc_8_fitment * cpc_9_fitment
-        elif curr_date == impl_map[cpc_10_impl_choice] and curr_date > datetime.date(2046, 1, 1):
-            c_basic, c_level, c_da, pending_dni, active_fitment = notional_basic, notional_level, notional_da, notional_pending_dni, cpc_8_fitment * cpc_9_fitment * cpc_10_fitment
 
         # DA Increments
         if curr_date.month == 1 and curr_date.year not in [2026, 2036, 2046]:
@@ -268,7 +248,7 @@ def simulate():
             c_da += da_jul
             if is_arrear_period: notional_da += da_jul
 
-        # Drawn Salary (Actual Pay)
+        # Drawn Salary Calculation
         tpta_base = round((base_tpta_7cpc * active_fitment)/100)*100 if active_fitment > 1.0 else base_tpta_7cpc
         da_amt = c_basic * (c_da / 100.0)
         hra_amt = c_basic * (hra_rate / 100.0)
@@ -281,16 +261,26 @@ def simulate():
         total_deductions = cghs_ded + cgegis_ded + nps_tier1_ded + gpf_ded
         net_pay = gross - total_deductions
 
-        # Due Salary (Arrears Track)
+        # Arrears Calculation (Strictly 8th CPC, with precise Net deductions)
         n_gross = 0
-        monthly_arrear = 0
         if is_arrear_period:
             n_da_amt = notional_basic * (notional_da / 100.0)
             n_hra_amt = notional_basic * (hra_rate / 100.0)
             n_tpta_amt = notional_tpta_base + (notional_tpta_base * (notional_da / 100.0))
             n_gross = notional_basic + n_da_amt + n_hra_amt + n_tpta_amt
-            monthly_arrear = n_gross - gross
-            arrears_accumulated += max(0, monthly_arrear)
+            
+            diff_gross = n_gross - gross
+            if diff_gross > 0:
+                if scheme in ["NPS", "UPS"]:
+                    # NPS/UPS Tier 1 deduction is 10% of the difference in Basic+DA
+                    diff_pay_da = (notional_basic + n_da_amt) - (c_basic + da_amt)
+                    arr_ded = max(0, diff_pay_da * 0.10)
+                else:
+                    # OPS deduction is lesser of GPF input or 6% of Notional Basic
+                    arr_ded = min(gpf_sub, notional_basic * 0.06)
+                
+                net_arrear_month = diff_gross - arr_ded
+                arrears_accumulated += max(0, net_arrear_month)
 
         # Corpus Addition
         if scheme in ["NPS", "UPS"]:
@@ -304,12 +294,9 @@ def simulate():
             "Basic": round(c_basic),
             "DA%": c_da,
             "DA Amt": round(da_amt),
-            "HRA": round(hra_amt),
-            "TPTA": round(tpta_amt),
             "Drawn Gross": round(gross),
-            "Deductions": round(total_deductions),
             "Net Salary": round(net_pay),
-            "Due Gross (CPC)": round(n_gross) if is_arrear_period else "-",
+            "Due Gross (8th CPC)": round(n_gross) if is_arrear_period else "-",
             "Corpus": round(running_corpus) if scheme in ["NPS", "UPS"] else "-"
         })
 
@@ -326,8 +313,10 @@ if st.button("Generate Complete Projection", type="primary"):
         
         last_month = projection[-1]
         last_basic = float(last_month["Basic"])
+        last_da_pct = float(last_month["DA%"])
         last_da_amt = float(last_month["DA Amt"])
         last_emoluments = last_basic + last_da_amt
+        last_net = float(last_month["Net Salary"])
         final_corpus = float(last_month["Corpus"]) if scheme in ["NPS", "UPS"] else 0
         
         if len(projection) >= 12: avg_12m_basic = sum([p["Basic"] for p in projection[-12:]]) / 12.0
@@ -336,13 +325,14 @@ if st.button("Generate Complete Projection", type="primary"):
         days_of_service = (ret_date - doj).days
         qualifying_half_years = min(math.floor(max(0, days_of_service) / 182.5), 66)
         
+        # --- Dashboard UI ---
         st.subheader(f"📊 Dashboard: {emp_name} ({scheme})")
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Final Basic Pay", f"₹ {last_basic:,.0f}")
-        m2.metric("Final Net Salary", f"₹ {last_month['Net Salary']:,.0f}")
-        m3.metric("Final DA %", f"{last_month['DA%']}%")
+        m2.metric("Final Net Salary", f"₹ {last_net:,.0f}")
+        m3.metric("Final DA % & Amt", f"{last_da_pct}% (₹ {last_da_amt:,.0f})")
         
-        if total_arrears > 0: m4.metric("Calculated CPC Arrears", f"₹ {total_arrears:,.0f}")
+        if total_arrears > 0: m4.metric("Net Payable 8th CPC Arrears", f"₹ {total_arrears:,.0f}")
         elif scheme in ["NPS", "UPS"]: m4.metric("Final Tier-1 Corpus", f"₹ {final_corpus:,.0f}")
         else: m4.metric("Total Months Simulated", len(projection))
 
@@ -359,9 +349,11 @@ if st.button("Generate Complete Projection", type="primary"):
 
         if scheme == "OPS":
             basic_pension = last_basic * 0.50
+            pension_da = basic_pension * (last_da_pct / 100.0)
             commuted_value = (basic_pension * (commutation_pct/100.0)) * 12 * 8.194
             residual_pension = basic_pension - (basic_pension * (commutation_pct/100.0))
-            c1.info(f"**Basic Pension:** ₹ {basic_pension:,.0f} / month\n\n*(Residual: ₹ {residual_pension:,.0f})*")
+            
+            c1.info(f"**Estimated Basic Pension:** ₹ {basic_pension:,.0f} / month\n\n**Est. Pension DA Amount:** ₹ {pension_da:,.0f}\n\n*(Residual Basic after Commutation: ₹ {residual_pension:,.0f})*")
             if commutation_pct > 0: st.error(f"**Commutation Payout (at {commutation_pct}%):** ₹ {commuted_value:,.0f}")
                 
         elif scheme == "NPS":
@@ -376,8 +368,9 @@ if st.button("Generate Complete Projection", type="primary"):
             ups_lumpsum = last_emoluments * 0.10 * qualifying_half_years
             corpus_withdrawal = final_corpus * (withdrawal_pct/100.0)
             reduced_assured_pension = assured_pension * (1 - (withdrawal_pct / 100.0))
+            pension_da = reduced_assured_pension * (last_da_pct / 100.0)
             
-            c1.info(f"**UPS Assured Pension:** ₹ {reduced_assured_pension:,.0f} / month\n\n*(Reduced due to {withdrawal_pct}% Corpus Withdrawal)*")
+            c1.info(f"**UPS Assured Basic Pension:** ₹ {reduced_assured_pension:,.0f} / month\n\n**Est. Pension DA Amount:** ₹ {pension_da:,.0f}\n\n*(Basic reduced due to {withdrawal_pct}% Corpus Withdrawal)*")
             if withdrawal_pct > 0:
                 st.error(f"**UPS Corpus Withdrawal ({withdrawal_pct}%):** ₹ {corpus_withdrawal:,.0f}")
             st.success(f"**UPS Superannuation Lumpsum:** ₹ {ups_lumpsum:,.0f}\n\n*(1/10th Emoluments per 6 months)*")
