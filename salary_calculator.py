@@ -20,6 +20,25 @@ except ImportError:
     FPDF_AVAILABLE = False
 
 # ══════════════════════════════════════════════════════════════════════
+# FORCE LIGHT THEME via .streamlit/config.toml (most reliable input-
+# visibility fix — overrides system dark-mode before Streamlit renders)
+# ══════════════════════════════════════════════════════════════════════
+import pathlib as _pl
+_cfg_dir = _pl.Path.home() / ".streamlit"
+_cfg_dir.mkdir(exist_ok=True)
+_cfg_file = _cfg_dir / "config.toml"
+if not _cfg_file.exists():
+    _cfg_file.write_text(
+        "[theme]\n"
+        'base = "light"\n'
+        'primaryColor = "#003366"\n'
+        'backgroundColor = "#ffffff"\n'
+        'secondaryBackgroundColor = "#eaf4fb"\n'
+        'textColor = "#1a1a2e"\n'
+    )
+del _pl, _cfg_dir, _cfg_file  # clean up temp names
+
+# ══════════════════════════════════════════════════════════════════════
 # PAGE CONFIG
 # ══════════════════════════════════════════════════════════════════════
 st.set_page_config(
@@ -45,30 +64,25 @@ html, body, [class*="css"] {
     max-width: 1400px;
 }
 
-/* ══ MAIN AREA — force dark text in all input widgets (light mode fix) ══ */
-/* Covers text_input, number_input, date_input, text_area */
-div[data-baseweb="base-input"] input,
-div[data-baseweb="input"] input,
-div[data-baseweb="textarea"] textarea,
-.stTextInput input,
-.stNumberInput input,
-.stDateInput input,
-.stTextArea textarea {
+/* ══ GLOBAL input text fix — works across ALL Streamlit versions ══
+   Nuclear selector: targets every input/textarea on the page first,
+   then sidebar overrides re-apply white text.                       */
+input, textarea, select {
     color: #1a1a2e !important;
     background-color: #ffffff !important;
     -webkit-text-fill-color: #1a1a2e !important;
+    caret-color: #003366 !important;
 }
-/* Placeholder text visible but muted */
-.stTextInput input::placeholder,
-.stNumberInput input::placeholder,
-.stDateInput input::placeholder {
-    color: #aab4be !important;
-    -webkit-text-fill-color: #aab4be !important;
+input::placeholder, textarea::placeholder {
+    color: #8ea8be !important;
+    -webkit-text-fill-color: #8ea8be !important;
+    opacity: 1 !important;
 }
-/* Selectbox / dropdown value text in main area */
-.main [data-baseweb="select"] [data-baseweb="tag"],
-.main [data-baseweb="select"] span {
+/* Selectbox value text */
+[data-baseweb="select"] span,
+[data-baseweb="select"] [data-baseweb="tag"] {
     color: #1a1a2e !important;
+    -webkit-text-fill-color: #1a1a2e !important;
 }
 
 /* ── Sidebar ── */
@@ -94,20 +108,18 @@ div[data-baseweb="textarea"] textarea,
     padding-bottom: 5px;
     margin: 14px 0 6px !important;
 }
-/* Sidebar inputs — dark bg, white text */
-[data-testid="stSidebar"] div[data-baseweb="base-input"] input,
-[data-testid="stSidebar"] div[data-baseweb="input"] input,
-[data-testid="stSidebar"] .stTextInput input,
-[data-testid="stSidebar"] .stNumberInput input,
-[data-testid="stSidebar"] .stDateInput input {
+/* Sidebar inputs — white text on dark bg (overrides global rule above) */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] textarea {
     background: rgba(255,255,255,0.12) !important;
     border: 1px solid rgba(255,255,255,0.25) !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
+    caret-color: #aed6f1 !important;
     border-radius: 6px !important;
 }
-[data-testid="stSidebar"] div[data-baseweb="base-input"] input::placeholder,
-[data-testid="stSidebar"] .stNumberInput input::placeholder {
+[data-testid="stSidebar"] input::placeholder,
+[data-testid="stSidebar"] textarea::placeholder {
     color: rgba(255,255,255,0.45) !important;
     -webkit-text-fill-color: rgba(255,255,255,0.45) !important;
 }
@@ -1080,12 +1092,23 @@ if generate:
         ))
         for evt_date, evt_label, evt_color in CPC_EVENTS:
             if evt_date in df_ann["Date"].values:
-                fig1.add_vline(
-                    x=evt_date,
-                    line=dict(color=evt_color, dash="dash", width=1.5),
-                    annotation_text=evt_label,
-                    annotation_position="top right",
-                    annotation_font=dict(color=evt_color, size=10)
+                fig1.add_shape(
+                    type="line",
+                    x0=evt_date, x1=evt_date,
+                    y0=0, y1=1,
+                    xref="x", yref="paper",
+                    line=dict(color=evt_color, dash="dash", width=1.5)
+                )
+                fig1.add_annotation(
+                    x=evt_date, y=1.02,
+                    xref="x", yref="paper",
+                    text=evt_label,
+                    showarrow=False,
+                    font=dict(color=evt_color, size=9, family="Inter"),
+                    bgcolor="rgba(255,255,255,0.85)",
+                    bordercolor=evt_color,
+                    borderwidth=1,
+                    borderpad=2,
                 )
         fig1.update_layout(
             **PLOTLY_DEFAULTS,
