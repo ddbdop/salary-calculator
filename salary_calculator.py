@@ -45,12 +45,43 @@ html, body, [class*="css"] {
     max-width: 1400px;
 }
 
+/* ══ MAIN AREA — force dark text in all input widgets (light mode fix) ══ */
+/* Covers text_input, number_input, date_input, text_area */
+div[data-baseweb="base-input"] input,
+div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea,
+.stTextInput input,
+.stNumberInput input,
+.stDateInput input,
+.stTextArea textarea {
+    color: #1a1a2e !important;
+    background-color: #ffffff !important;
+    -webkit-text-fill-color: #1a1a2e !important;
+}
+/* Placeholder text visible but muted */
+.stTextInput input::placeholder,
+.stNumberInput input::placeholder,
+.stDateInput input::placeholder {
+    color: #aab4be !important;
+    -webkit-text-fill-color: #aab4be !important;
+}
+/* Selectbox / dropdown value text in main area */
+.main [data-baseweb="select"] [data-baseweb="tag"],
+.main [data-baseweb="select"] span {
+    color: #1a1a2e !important;
+}
+
 /* ── Sidebar ── */
 [data-testid="stSidebar"] {
     background: linear-gradient(175deg, #001a33 0%, #003366 55%, #1a5276 100%);
     border-right: 2px solid rgba(41,128,185,0.4);
 }
-[data-testid="stSidebar"] * { color: #e8f4fd !important; }
+/* Sidebar text — target only non-input elements to avoid cascade bleed */
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div:not([data-baseweb]),
+[data-testid="stSidebar"] li,
+[data-testid="stSidebar"] .stMarkdown { color: #e8f4fd !important; }
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3 {
@@ -63,16 +94,32 @@ html, body, [class*="css"] {
     padding-bottom: 5px;
     margin: 14px 0 6px !important;
 }
+/* Sidebar inputs — dark bg, white text */
+[data-testid="stSidebar"] div[data-baseweb="base-input"] input,
+[data-testid="stSidebar"] div[data-baseweb="input"] input,
+[data-testid="stSidebar"] .stTextInput input,
+[data-testid="stSidebar"] .stNumberInput input,
+[data-testid="stSidebar"] .stDateInput input {
+    background: rgba(255,255,255,0.12) !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    border-radius: 6px !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="base-input"] input::placeholder,
+[data-testid="stSidebar"] .stNumberInput input::placeholder {
+    color: rgba(255,255,255,0.45) !important;
+    -webkit-text-fill-color: rgba(255,255,255,0.45) !important;
+}
+/* Sidebar selectbox */
 [data-testid="stSidebar"] .stSelectbox > div > div {
     background: rgba(255,255,255,0.1) !important;
     border: 1px solid rgba(255,255,255,0.2) !important;
     border-radius: 6px !important;
 }
-[data-testid="stSidebar"] input {
-    background: rgba(255,255,255,0.1) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
-    color: white !important;
-    border-radius: 6px !important;
+[data-testid="stSidebar"] [data-baseweb="select"] span,
+[data-testid="stSidebar"] [data-baseweb="select"] [data-baseweb="tag"] {
+    color: #e8f4fd !important;
 }
 [data-testid="stSidebar"] .stSlider > div > div > div > div {
     background: #2980b9 !important;
@@ -325,7 +372,7 @@ def calc_retirement_date(dob):
 # SESSION STATE
 # ══════════════════════════════════════════════════════════════════════
 if 'dob' not in st.session_state:
-    st.session_state.dob = datetime.date(1985, 6, 23)
+    st.session_state.dob = datetime.date(1985, 1, 1)
 if 'ret_date' not in st.session_state:
     st.session_state.ret_date = calc_retirement_date(st.session_state.dob)
 
@@ -337,8 +384,9 @@ def update_ret_date():
 def reset_app():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    st.session_state.dob = datetime.date(1985, 6, 23)
+    st.session_state.dob = datetime.date(1985, 1, 1)
     st.session_state.ret_date = calc_retirement_date(st.session_state.dob)
+    st.session_state.emp_name = "Employee Name"
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -380,7 +428,7 @@ with st.sidebar:
 
     # 1. Personal Details
     st.header("1. Personal Details")
-    emp_name = st.text_input("Employee Name", "Deb Dutta Banerjee", key="emp_name")
+    emp_name = st.text_input("Employee Name", value="Employee Name", key="emp_name")
     dob = st.date_input(
         "Date of Birth", value=st.session_state.dob,
         min_value=datetime.date(1950, 1, 1),
