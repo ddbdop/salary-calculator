@@ -4,6 +4,7 @@ Improved version — Government Blue Theme | Plotly Charts | PDF Export | Mobile
 """
 
 import streamlit as st
+import streamlit.components.v1 as _stc
 import pandas as pd
 import datetime
 import calendar
@@ -318,6 +319,66 @@ input::placeholder, textarea::placeholder {
 }
 </style>
 """, unsafe_allow_html=True)
+
+# ══════════════════════════════════════════════════════════════════════
+# JS STYLE INJECTION — inject <style> into parent <head> via iframe.
+# This is the ONLY method guaranteed to override Streamlit's theme CSS
+# because it runs after the full DOM is painted.
+# ══════════════════════════════════════════════════════════════════════
+_stc.html("""
+<script>
+(function injectInputStyles() {
+    var css = `
+        /* ── Main area inputs: dark text on white ── */
+        input, textarea {
+            color: #1a1a2e !important;
+            -webkit-text-fill-color: #1a1a2e !important;
+            background-color: #ffffff !important;
+            caret-color: #003366 !important;
+        }
+        input::placeholder, textarea::placeholder {
+            color: #8ea8be !important;
+            -webkit-text-fill-color: #8ea8be !important;
+            opacity: 1 !important;
+        }
+        /* ── Sidebar inputs: white text on dark ── */
+        [data-testid="stSidebar"] input,
+        [data-testid="stSidebar"] textarea {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            background-color: rgba(255,255,255,0.12) !important;
+            border: 1px solid rgba(255,255,255,0.25) !important;
+            caret-color: #aed6f1 !important;
+        }
+        [data-testid="stSidebar"] input::placeholder,
+        [data-testid="stSidebar"] textarea::placeholder {
+            color: rgba(255,255,255,0.45) !important;
+            -webkit-text-fill-color: rgba(255,255,255,0.45) !important;
+        }
+    `;
+    /* Inject into parent document head */
+    var pd = window.parent.document;
+    var existing = pd.getElementById('__salary_calc_input_fix__');
+    if (existing) { existing.remove(); }
+    var tag = pd.createElement('style');
+    tag.id = '__salary_calc_input_fix__';
+    tag.innerHTML = css;
+    pd.head.appendChild(tag);
+
+    /* MutationObserver keeps re-applying when Streamlit re-renders widgets */
+    new MutationObserver(function() {
+        pd.querySelectorAll('input, textarea').forEach(function(el) {
+            var inSidebar = pd.querySelector('[data-testid="stSidebar"]');
+            inSidebar = inSidebar && inSidebar.contains(el);
+            el.style.setProperty('color',                    inSidebar ? '#ffffff' : '#1a1a2e', 'important');
+            el.style.setProperty('-webkit-text-fill-color',  inSidebar ? '#ffffff' : '#1a1a2e', 'important');
+            el.style.setProperty('background-color',         inSidebar ? 'rgba(255,255,255,0.12)' : '#ffffff', 'important');
+        });
+    }).observe(pd.body, { childList: true, subtree: true });
+})();
+</script>
+""", height=0, scrolling=False)
+
 
 
 # ══════════════════════════════════════════════════════════════════════
