@@ -58,11 +58,7 @@ st.markdown("""
 # Remove the previous file-writing config block entirely as it conflicts with browser settings.
 # Now proceed with your imports and load_pay_matrix logic...
 
-try:
-    from fpdf import FPDF
-    FPDF_AVAILABLE = True
-except ImportError:
-    FPDF_AVAILABLE = False
+
 
 # ══════════════════════════════════════════════════════════════════════
 # FORCE LIGHT THEME via .streamlit/config.toml (most reliable input-
