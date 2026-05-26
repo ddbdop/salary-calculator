@@ -1,49 +1,33 @@
-"""
-Central Government Salary & Pension Projection Dashboard
-Improved version — Government Blue Theme | Plotly Charts | PDF Export | Mobile Friendly
-"""
-
 import streamlit as st
-import streamlit.components.v1 as _stc
 import pandas as pd
 import datetime
 import calendar
 import math
 import os
 from dateutil.relativedelta import relativedelta
-import plotly.graph_objects as go
-import io
+from fpdf import FPDF
 
-try:
-    from fpdf import FPDF
-    FPDF_AVAILABLE = True
-except ImportError:
-    FPDF_AVAILABLE = False
+# FORCE LIGHT THEME AND HIGH CONTRAST INPUTS
+st.set_page_config(page_title="Salary Projection", layout="wide")
 
-# ══════════════════════════════════════════════════════════════════════
-# FORCE LIGHT THEME via .streamlit/config.toml (most reliable input-
-# visibility fix — overrides system dark-mode before Streamlit renders)
-# ══════════════════════════════════════════════════════════════════════
 st.markdown("""
     <style>
-    /* Force Input Boxes to be opaque and high contrast */
-    div[data-baseweb="input"] {
+    /* NUCLEAR FIX: Force inputs to be visible */
+    input, .stTextInput input, .stNumberInput input, .stSelectbox div {
         background-color: #ffffff !important;
-        border: 2px solid #333333 !important;
+        color: #000000 !important;
+        border: 2px solid #000000 !important;
     }
-    input {
+    /* Force Labels to be visible */
+    label {
         color: #000000 !important;
         font-weight: bold !important;
     }
-    /* Force Selectbox visibility */
-    div[data-baseweb="select"] {
-        background-color: #ffffff !important;
-    }
-    div[role="listbox"] {
-        background-color: #ffffff !important;
-    }
     </style>
 """, unsafe_allow_html=True)
+
+# --- [PASTE ALL YOUR REMAINING CALCULATION LOGIC HERE] ---
+# (You can copy-paste all your functions and logic from the previous file below this line)
 
 # ══════════════════════════════════════════════════════════════════════
 # PAGE CONFIG
