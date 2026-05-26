@@ -1,10 +1,9 @@
 """
 Central Government Salary & Pension Projection Dashboard
-Improved version — Government Blue Theme | Plotly Charts | PDF Export | Mobile Friendly
+Fixed Theme: Force Light Mode + CSS Contrast Overrides
 """
 
 import streamlit as st
-import streamlit.components.v1 as _stc
 import pandas as pd
 import datetime
 import calendar
@@ -14,30 +13,46 @@ from dateutil.relativedelta import relativedelta
 import plotly.graph_objects as go
 import io
 
-try:
-    from fpdf import FPDF
-    FPDF_AVAILABLE = True
-except ImportError:
-    FPDF_AVAILABLE = False
+# 1. SET THEME VIA ST.SET_PAGE_CONFIG (Most stable method)
+st.set_page_config(
+    page_title="Salary Projection Dashboard", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# ══════════════════════════════════════════════════════════════════════
-# FORCE LIGHT THEME via .streamlit/config.toml (most reliable input-
-# visibility fix — overrides system dark-mode before Streamlit renders)
-# ══════════════════════════════════════════════════════════════════════
-import pathlib as _pl
-_cfg_dir = _pl.Path.home() / ".streamlit"
-_cfg_dir.mkdir(exist_ok=True)
-_cfg_file = _cfg_dir / "config.toml"
-if not _cfg_file.exists():
-    _cfg_file.write_text(
-        "[theme]\n"
-        'base = "light"\n'
-        'primaryColor = "#003366"\n'
-        'backgroundColor = "#ffffff"\n'
-        'secondaryBackgroundColor = "#eaf4fb"\n'
-        'textColor = "#1a1a2e"\n'
-    )
-del _pl, _cfg_dir, _cfg_file  # clean up temp names
+# 2. CSS OVERRIDE (Fixes the invisible text issue by forcing high contrast)
+st.markdown("""
+    <style>
+    /* Force Input background to be white and text to be dark */
+    .stTextInput > div > div > input, 
+    .stNumberInput > div > div > input, 
+    .stSelectbox > div > div > div {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #cccccc !important;
+    }
+    
+    /* Ensure Sidebar text is readable */
+    [data-testid="stSidebar"] {
+        background-color: #f0f2f6 !important;
+    }
+    
+    .gov-footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #003366;
+        color: white;
+        text-align: center;
+        padding: 10px;
+        font-size: 12px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Remove the previous file-writing config block entirely as it conflicts with browser settings.
+# Now proceed with your imports and load_pay_matrix logic...
 
 # ══════════════════════════════════════════════════════════════════════
 # PAGE CONFIG
