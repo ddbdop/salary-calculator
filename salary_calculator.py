@@ -24,20 +24,24 @@ except ImportError:
 # FORCE LIGHT THEME via .streamlit/config.toml (most reliable input-
 # visibility fix — overrides system dark-mode before Streamlit renders)
 # ══════════════════════════════════════════════════════════════════════
-import pathlib as _pl
-_cfg_dir = _pl.Path.home() / ".streamlit"
-_cfg_dir.mkdir(exist_ok=True)
-_cfg_file = _cfg_dir / "config.toml"
-if not _cfg_file.exists():
-    _cfg_file.write_text(
-        "[theme]\n"
-        'base = "light"\n'
-        'primaryColor = "#003366"\n'
-        'backgroundColor = "#ffffff"\n'
-        'secondaryBackgroundColor = "#eaf4fb"\n'
-        'textColor = "#1a1a2e"\n'
-    )
-del _pl, _cfg_dir, _cfg_file  # clean up temp names
+# FIX: Force Light Mode + CSS Contrast Overrides
+st.markdown("""
+    <style>
+    /* Force Input background to be white and text to be dark */
+    .stTextInput > div > div > input, 
+    .stNumberInput > div > div > input, 
+    .stSelectbox > div > div > div {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #cccccc !important;
+    }
+    
+    /* Ensure Sidebar text is readable */
+    [data-testid="stSidebar"] {
+        background-color: #f0f2f6 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════
 # PAGE CONFIG
