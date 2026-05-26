@@ -24,20 +24,26 @@ except ImportError:
 # FORCE LIGHT THEME via .streamlit/config.toml (most reliable input-
 # visibility fix — overrides system dark-mode before Streamlit renders)
 # ══════════════════════════════════════════════════════════════════════
-import pathlib as _pl
-_cfg_dir = _pl.Path.home() / ".streamlit"
-_cfg_dir.mkdir(exist_ok=True)
-_cfg_file = _cfg_dir / "config.toml"
-if not _cfg_file.exists():
-    _cfg_file.write_text(
-        "[theme]\n"
-        'base = "light"\n'
-        'primaryColor = "#003366"\n'
-        'backgroundColor = "#ffffff"\n'
-        'secondaryBackgroundColor = "#eaf4fb"\n'
-        'textColor = "#1a1a2e"\n'
-    )
-del _pl, _cfg_dir, _cfg_file  # clean up temp names
+st.markdown("""
+    <style>
+    /* Force Input Boxes to be opaque and high contrast */
+    div[data-baseweb="input"] {
+        background-color: #ffffff !important;
+        border: 2px solid #333333 !important;
+    }
+    input {
+        color: #000000 !important;
+        font-weight: bold !important;
+    }
+    /* Force Selectbox visibility */
+    div[data-baseweb="select"] {
+        background-color: #ffffff !important;
+    }
+    div[role="listbox"] {
+        background-color: #ffffff !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════
 # PAGE CONFIG
