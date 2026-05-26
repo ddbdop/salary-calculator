@@ -2,45 +2,48 @@
 Central Government Salary & Pension Projection Dashboard
 Improved version — Government Blue Theme | Plotly Charts | PDF Export | Mobile Friendly
 """
-
 import streamlit as st
-import streamlit.components.v1 as _stc
 import pandas as pd
 import datetime
 import calendar
 import math
 import os
 from dateutil.relativedelta import relativedelta
-import plotly.graph_objects as go
-import io
+from fpdf import FPDF
 
-try:
-    from fpdf import FPDF
-    FPDF_AVAILABLE = True
-except ImportError:
-    FPDF_AVAILABLE = False
+# FORCE NO THEME CSS
+st.set_page_config(page_title="Salary Projection", layout="wide")
 
-# ══════════════════════════════════════════════════════════════════════
-# FORCE LIGHT THEME via .streamlit/config.toml (most reliable input-
-# visibility fix — overrides system dark-mode before Streamlit renders)
-# ══════════════════════════════════════════════════════════════════════
-# FIX: Force Light Mode for inputs to prevent invisibility
+# This CSS targets the BROWSER'S native rendering engine, not just the Streamlit wrapper
 st.markdown("""
     <style>
-    /* Force inputs to be opaque, white background, black text */
-    input, textarea, .stTextInput input, .stNumberInput input, .stSelectbox div {
-        background-color: #ffffff !important;
+    /* Reset all input styles to native browser defaults */
+    input {
+        background-color: #FFFFFF !important;
         color: #000000 !important;
-        border: 2px solid #003366 !important;
-        color-scheme: light !important; 
+        border: 2px solid #333333 !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        -webkit-appearance: none !important;
     }
-    /* Force Labels to be black and readable */
-    label {
-        color: #000000 !important;
-        font-weight: 700 !important;
+    
+    /* Target Streamlit's input container */
+    [data-baseweb="input"] {
+        background-color: #FFFFFF !important;
+    }
+    
+    /* Ensure text is black and visible */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus {
+        -webkit-text-fill-color: #000000 !important;
+        -webkit-box-shadow: 0 0 0px 1000px #FFFFFF inset !important;
     }
     </style>
-""", unsafe_allow_html=True) # clean up temp names
+""", unsafe_allow_html=True)
+
+# ... (Keep your existing load_pay_matrix and rest of code here)
+
 
 # ══════════════════════════════════════════════════════════════════════
 # PAGE CONFIG
